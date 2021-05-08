@@ -20,8 +20,7 @@ void *multiplier(void *arg)  {
     pthread_t id = pthread_self();
     for (int row=0; row<rows; row++) {
         for (int col=0; col<cols; col++) {
-            counter++;
-            if (pthread_equal(id, tid[counter])) {
+            if (pthread_equal(id, tid[row*cols+col])) {
                 if (arrays3[row][col] < new[row][col]) {
                     new[row][col] = 0;
                 } 
@@ -58,7 +57,7 @@ void main () {
         }
     }
 
-    while (k<cols) {
+    while (k<cols*rows) {
         err = pthread_create(&(tid[k]), NULL, &multiplier, NULL);
         if(err != 0){
             printf("Can't create thread : [%s]\n", strerror(err));
