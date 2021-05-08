@@ -79,7 +79,7 @@ void* iniinput(void *arg)
 			strncat(extension, &argv[i][0], PATH_MAX);
 			strncat(directory, extension, PATH_MAX);
 			strncat(dest, directory, PATH_MAX);
-			printf("%s %s\n", source, dest);
+			//printf("%s %s\n", source, dest);
 			rename(source, dest);
 			i++;
 			memset(extension, 0, sizeof(extension));
@@ -91,11 +91,11 @@ void* iniinput(void *arg)
 	}
 	else if(pthread_equal(id, tid[1]))
 	{
-		printf("Yeah baby tid1\n");
+		printf("Yeah baby tid1\n"); //pindah directory
 	}
 	else if(pthread_equal(id, tid[2]))
 	{
-		printf("Yeah baby tid2\n");
+		printf("Yeah baby tid2\n"); //pindah semua file
 	}
 	return NULL;
 }
