@@ -48,6 +48,7 @@ void download_handler();
 void delete_handler();
 void search_handler();
 
+off_t fsize(const char * );
 void save_session(char*, char* );
 void clear_session();
 void record_log(int, const char* );
@@ -256,10 +257,11 @@ void add_handler() {
   if (client_file_status == NOT_FOUND) return;
 
   int CHUNK_SIZE = 1 * BYTES;
-  int total_file_size = 0;
+  int total_recieved_size = 0;
   int bytes_read;
   char chunk[CHUNK_SIZE];
   char record_data[1024];
+  int file_size;
 
   char publisher[50];
   char tahun[10];
@@ -283,18 +285,29 @@ void add_handler() {
   sprintf(record_data, "%s\t%s\t%s\n", file_path, tahun, publisher);
   fputs(record_data, database_file);
 
+  read_from_client(&file_size, sizeof(file_size), INTEGER);
+
+  double x;
+  double y = (double) file_size;
+
+  /* Proses utama menerima file dari client */
   do {
+    bzero(chunk, CHUNK_SIZE);
     read(client_socket, &bytes_read, sizeof(int));
     read(client_socket, chunk, bytes_read);
-    total_file_size += bytes_read;
     fwrite(chunk, 1, bytes_read, destination_file);
-    bzero(chunk, CHUNK_SIZE);
-    printf("bytes read = %d\n", bytes_read);
+
+    total_recieved_size += bytes_read;
+    x = (double) total_recieved_size;
+
+    printf("recieved: %.1lf%%\r", 100 * x / y);
   } while (bytes_read >= CHUNK_SIZE);
 
   fclose(database_file);
   fclose(destination_file);
-  printf("%d bytes read from client.\n", total_file_size);
+
+  printf("downloaded: 100%%\n");
+  printf("File (%.1lf MB) was recieved from client.\n", x / 1000000);
 
   record_log(ADD, file_name);
 }
@@ -337,19 +350,29 @@ void download_handler() {
   }
 
   int CHUNK_SIZE = 1 * BYTES;
-  int total_file_size = 0;
+  int total_read_size = 0;
   unsigned char chunk[CHUNK_SIZE];
+  int file_size = (int) fsize(file_path);
+
+  send_to_client(&file_size, INTEGER);
+
+  double x;
+  double y = (double) file_size;
 
   while (!feof(source_file)) {
     int bytes_read = fread(chunk, 1, CHUNK_SIZE, source_file);
-    total_file_size += bytes_read;
     send(client_socket, &bytes_read, sizeof(int), 0);
     send(client_socket, chunk, bytes_read, 0);
-    printf("bytes read = %d\n", bytes_read);
+
+    total_read_size += bytes_read;
+    x = (double) total_read_size;
+
+    printf("sent: %.1lf%%\r", 100 * x / y);
   }
   
   fclose(source_file);
-  printf("File (%d bytes) was successfully sent!\n", total_file_size);
+  printf("sent: 100%%\n");
+  printf("File (%d bytes) was successfully sent!\n", total_read_size);
 }
 
 void delete_handler() {
@@ -439,6 +462,13 @@ void search_handler() {
   } while (keep_read);
 
   fclose(database_file);
+}
+
+off_t fsize(const char *filename) {
+  struct stat st; 
+
+  if (stat(filename, &st) == 0) return st.st_size;
+  return -1; 
 }
 
 void save_session(char* id, char* password) {

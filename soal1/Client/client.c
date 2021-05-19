@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <netinet/in.h>
 #include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <stdbool.h>
@@ -43,6 +45,7 @@ void download_handler(char* );
 void delete_handler(char* );
 void search_handler(int, char* );
 
+off_t fsize(const char * );
 void send_to_server(const void*, int);
 void read_from_server(void*, int, int);
 bool is_autheticated();
@@ -189,12 +192,13 @@ void add_handler() {
   }
 
   int CHUNK_SIZE = 1 * BYTES;
-  int total_file_size = 0;
+  int total_recieved_size = 0;
   unsigned char chunk[CHUNK_SIZE];
 
   char publisher[50];
   char tahun[10];
   char file_path[PATH_MAX];
+  char file_path_copy[PATH_MAX];
   
   printf("Publisher: ");
   scanf("%[^\n]%*c", publisher);
@@ -204,6 +208,7 @@ void add_handler() {
   
   printf("Filepath: ");
   scanf("%[^\n]%*c", file_path);
+  strcpy(file_path_copy, file_path);
   FILE* source_file = fopen(file_path, "rb");
   char* file_name = basename(file_path);
 
@@ -219,16 +224,27 @@ void add_handler() {
   send_to_server(tahun, STRING);
   send_to_server(file_name, STRING);
 
+  int file_size = (int) fsize(file_path_copy);
+
+  send_to_server(&file_size, INTEGER);
+
+  double x;
+  double y = (double) file_size;
+
   while (!feof(source_file)) {
     int bytes_read = fread(chunk, 1, CHUNK_SIZE, source_file);
-    total_file_size += bytes_read;
     send(client_socket, &bytes_read, sizeof(int), 0);
     send(client_socket, chunk, bytes_read, 0);
-    printf("bytes read = %d\n", bytes_read);
+
+    total_recieved_size += bytes_read;
+    x = (double) total_recieved_size;
+
+    printf("sent: %.1lf%%\r", 100 * x / y);
   }
   
   fclose(source_file);
-  printf("File (%d bytes) was successfully sent!\n", total_file_size);
+  printf("sent: 100%%\n");
+  printf("File (%.1lf MB) was sent to server.\n", x / 1000000);
 }
 
 void download_handler(char* file_name) {
@@ -255,21 +271,31 @@ void download_handler(char* file_name) {
   }
 
   int CHUNK_SIZE = 1 * BYTES;
-  int total_file_size = 0;
+  int total_recieved_size = 0;
   int bytes_read;
+  int file_size;
   unsigned char chunk[CHUNK_SIZE];
+
+  read_from_server(&file_size, sizeof(file_size), INTEGER);
+
+  double x;
+  double y = (double) file_size;
 
   do {
     bzero(chunk, CHUNK_SIZE);
     read(client_socket, &bytes_read, sizeof(int));
     read(client_socket, chunk, bytes_read);
-    total_file_size += bytes_read;
     fwrite(chunk, 1, bytes_read, destination_file);
-    printf("bytes read = %d\n", bytes_read);
+
+    total_recieved_size += bytes_read;
+    x = (double) total_recieved_size;
+
+    printf("downloaded: %.1lf%%\r", 100 * x / y);
   } while (bytes_read >= CHUNK_SIZE);
 
   fclose(destination_file);
-  printf("%d bytes read from server.\n", total_file_size);
+  printf("downloaded: 100%%\n");
+  printf("File (%.1lf MB) was downloaded from server.\n", x / 1000000);
 }
 
 void delete_handler(char* file_name) {
@@ -329,6 +355,13 @@ void search_handler(int mode, char* keyword) {
 
   } while (keep_read);
 
+}
+
+off_t fsize(const char *filename) {
+  struct stat st; 
+
+  if (stat(filename, &st) == 0) return st.st_size;
+  return -1; 
 }
 
 void send_to_server(const void* data, int mode) {
