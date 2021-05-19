@@ -58,7 +58,7 @@ void main()
             // size1++;
             scanf("%d", &arrays2[i][j]);
         }
-        printf("\n");
+        // printf("\n");
     }
     printf("\n");
 
@@ -77,7 +77,7 @@ void main()
         pthread_join(tid[i], NULL);
     }
     
-    printf("Matriks hasil:\n");
+    printf("2a. Matriks hasil:\n");
     for(int i=0; i<4; i++){
         for(int k=0; k<6; k++)
         {
