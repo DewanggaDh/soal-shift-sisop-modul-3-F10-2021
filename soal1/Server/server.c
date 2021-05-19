@@ -246,7 +246,8 @@ void login_handler() {
 }
 
 void add_handler() {
-  send(client_socket, &logged_in, sizeof(bool), 0);
+  send_to_client(&logged_in, BOOLEAN);
+
   if (!logged_in) return;
 
   int client_file_status;
@@ -299,7 +300,8 @@ void add_handler() {
 }
 
 void download_handler() {
-  send(client_socket, &logged_in, sizeof(bool), 0);
+  send_to_client(&logged_in, BOOLEAN);
+
   if (!logged_in) return;
 
   bool file_available = false;
@@ -351,7 +353,7 @@ void download_handler() {
 }
 
 void delete_handler() {
-  send(client_socket, &logged_in, sizeof(bool), 0);
+  send_to_client(&logged_in, BOOLEAN);
 
   if (!logged_in) return;
 
@@ -417,6 +419,10 @@ void delete_handler() {
 }
 
 void search_handler() {
+  send_to_client(&logged_in, BOOLEAN);
+  
+  if (!logged_in) return;
+
   char information[256];
   bool keep_read = false;
   FILE* database_file = fopen("./files.tsv", "r");

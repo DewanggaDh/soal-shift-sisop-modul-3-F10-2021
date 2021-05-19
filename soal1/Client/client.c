@@ -292,6 +292,13 @@ void delete_handler(char* file_name) {
 }
 
 void search_handler(int mode, char* keyword) {
+  bool file_available = false;
+
+  if (!is_autheticated()) {
+    printf("You must login first!\n");
+    return;
+  }
+
   const int FILE_PATH = 0;
   const int TAHUN = 1;
   const int PUBLISHER = 2;
