@@ -43,8 +43,8 @@ void download_handler(char* );
 void delete_handler(char* );
 void search_handler(int, char* );
 
-void send_to_server(const void* data, int mode);
-void read_from_server(void* data, int items, int mode);
+void send_to_server(const void*, int);
+void read_from_server(void*, int, int);
 bool is_autheticated();
 void extract_request(char*, char*, char* );
 void seperate(const char* , char* , char* );
@@ -154,7 +154,7 @@ void register_handler() {
   scanf("%[^\n]%*c", password);
   send_to_server(password, STRING);
 
-  read_from_server(server_message, 50, STRING);
+  read_from_server(server_message, sizeof(server_message), STRING);
   printf("Message from server: %s\n", server_message);
 }
 
@@ -178,7 +178,7 @@ void login_handler() {
   scanf("%[^\n]%*c", password);
   send_to_server(password, STRING);
 
-  read_from_server(server_message, 50, STRING);
+  read_from_server(server_message, sizeof(server_message), STRING);
   printf("Message from server: %s\n", server_message);
 }
 
@@ -240,7 +240,7 @@ void download_handler(char* file_name) {
   bool file_available = false;
 
   send_to_server(file_name, STRING);
-  read_from_server(&file_available, 0, BOOLEAN);
+  read_from_server(&file_available, sizeof(file_available), BOOLEAN);
 
   if (!file_available) {
     printf("File is not available\n");
@@ -281,7 +281,7 @@ void delete_handler(char* file_name) {
   }
 
   send_to_server(file_name, STRING);
-  read_from_server(&file_available, 0, BOOLEAN);
+  read_from_server(&file_available, sizeof(file_available), BOOLEAN);
 
   if (!file_available) {
     printf("File is not available\n");
@@ -303,11 +303,11 @@ void search_handler(int mode, char* keyword) {
   char records[3][100];
 
   do {
-    read_from_server(&keep_read, 0, BOOLEAN);
+    read_from_server(&keep_read, sizeof(keep_read), BOOLEAN);
 
     if (!keep_read) break;
 
-    read_from_server(information, 256, STRING);
+    read_from_server(information, sizeof(information), STRING);
 
     split_string(records, information, "\t");
     seperate(records[FILE_PATH], plain_filename, file_extension);
@@ -347,20 +347,20 @@ void send_to_server(const void* data, int mode) {
   }
 }
 
-void read_from_server(void* data, int items, int mode) {
+void read_from_server(void* data, int data_size, int mode) {
   int length = 0;
 
   switch (mode) {
     case BOOLEAN:
-      read(client_socket, data, sizeof(bool));
+      read(client_socket, data, data_size);
       return;
       
     case INTEGER:
-      read(client_socket, data, sizeof(int));
+      read(client_socket, data, data_size);
       return;
 
     case STRING:
-      bzero(data, items);
+      bzero(data, data_size);
       read(client_socket, &length, sizeof(int));
       read(client_socket, data, length);
       return;
@@ -372,7 +372,7 @@ void read_from_server(void* data, int items, int mode) {
 
 bool is_autheticated() {
   bool logged_in = false;
-  read_from_server(&logged_in, 0, BOOLEAN);
+  read_from_server(&logged_in, sizeof(logged_in), BOOLEAN);
   return logged_in;
 }
 

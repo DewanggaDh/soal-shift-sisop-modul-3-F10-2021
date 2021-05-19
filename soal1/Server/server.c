@@ -127,15 +127,14 @@ int accept_new_connection(int server_socket) {
 }
 
 void handle_connection(int client_socket) {
-  const int SIZE = 50;
-  char request[SIZE];
+  char request[50];
 
   keep_handling = true;
   logged_in = false;
 
   while (keep_handling) {
     printf("Waiting for request...\n");
-    read_from_client(request, SIZE, STRING);
+    read_from_client(request, sizeof(request), STRING);
     printf("Recieved request: %s\n", request);
 
     switch (translate_request(request)) {
@@ -186,8 +185,8 @@ void register_handler() {
 
   printf("Reading id & password...\n");
 
-  read_from_client(id, 50, STRING);
-  read_from_client(password, 50, STRING);
+  read_from_client(id, sizeof(id), STRING);
+  read_from_client(password, sizeof(password), STRING);
 
   strcpy(account_data, id);
   strcat(account_data, ":");
@@ -210,8 +209,8 @@ void login_handler() {
   char id[50];
   char password[50];
 
-  read_from_client(id, 50, STRING);
-  read_from_client(password, 50, STRING);
+  read_from_client(id, sizeof(id), STRING);
+  read_from_client(password, sizeof(password), STRING);
 
   FILE* account_file = fopen("./akun.txt", "r");
   char data[256];
@@ -251,7 +250,7 @@ void add_handler() {
   if (!logged_in) return;
 
   int client_file_status;
-  read_from_client(&client_file_status, 0, INTEGER);
+  read_from_client(&client_file_status, sizeof(client_file_status), INTEGER);
 
   if (client_file_status == NOT_FOUND) return;
 
@@ -266,9 +265,9 @@ void add_handler() {
   char file_name[50];
   char file_path[PATH_MAX];
 
-  read_from_client(publisher, 50, STRING);
-  read_from_client(tahun, 10, STRING);
-  read_from_client(file_name, 50, STRING);
+  read_from_client(publisher, sizeof(publisher), STRING);
+  read_from_client(tahun, sizeof(tahun), STRING);
+  read_from_client(file_name, sizeof(file_name), STRING);
 
   sprintf(file_path, "./FILES/%s", file_name);
 
@@ -310,7 +309,7 @@ void download_handler() {
   char requested_file[100];
   char records[3][100];
 
-  read_from_client(requested_file, 100, STRING);
+  read_from_client(requested_file, sizeof(requested_file), STRING);
   sprintf(file_path, "./FILES/%s", requested_file);
 
   /* Iterating files.tsv */
@@ -366,12 +365,18 @@ void delete_handler() {
   char information[256];
   char copy_information[256];
   char requested_file[100];
+  char filename[100];
   char records[3][100];
 
-  read_from_client(requested_file, 100, STRING);
+  read_from_client(requested_file, sizeof(requested_file), STRING);
+  strcpy(filename, requested_file);
+
+  // printf("deleted filename: %s\n", filename);
 
   sprintf(file_path, "./FILES/%s", requested_file);
   sprintf(new_file_path, "./FILES/old-%s", requested_file);
+
+  // printf("deleted filename: %s\n", filename);
 
   /* Iterating files.tsv */
   while (fgets(information, 256, old_database_file) != NULL) {
@@ -391,6 +396,8 @@ void delete_handler() {
     fputs(copy_information, new_database_file);
   }
 
+  // printf("deleted filename: %s\n", filename);
+
   send_to_client(&file_available, BOOLEAN);
 
   fclose(old_database_file);
@@ -405,7 +412,8 @@ void delete_handler() {
   rename("./new-files.tsv", "./files.tsv");
   rename(file_path, new_file_path);
 
-  record_log(DELETE, requested_file);
+  strcpy(filename, basename(file_path));
+  record_log(DELETE, filename);
 }
 
 void search_handler() {
@@ -483,20 +491,20 @@ void send_to_client(const void* data, int mode) {
   }
 }
 
-void read_from_client(void* data, int items, int mode) {
+void read_from_client(void* data, int data_size, int mode) {
   int length = 0;
 
   switch (mode) {
     case BOOLEAN:
-      read(client_socket, data, sizeof(bool));
+      read(client_socket, data, data_size);
       return;
       
     case INTEGER:
-      read(client_socket, data, sizeof(int));
+      read(client_socket, data, data_size);
       return;
 
     case STRING:
-      bzero(data, items);
+      bzero(data, data_size);
       read(client_socket, &length, sizeof(int));
       read(client_socket, data, length);
       return;
