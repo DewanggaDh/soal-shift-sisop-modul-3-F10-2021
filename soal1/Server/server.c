@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <netinet/in.h>
 #include <string.h>
+#include<pthread.h>
 #include <unistd.h>
 #include <stdbool.h>
 #include <sys/stat.h>
@@ -14,6 +15,7 @@
 #define BYTES 1024
 #define NOT_FOUND 404
 #define BACKLOG 7
+#define JUMLAH_THREAD BACKLOG + 1
 #define BOOLEAN 1
 #define INTEGER 2
 #define STRING 3
@@ -26,49 +28,46 @@
 #define SEE 7
 #define FIND 8
 
-int client_socket;
-bool logged_in;
-bool keep_handling;
-char user_id[50];
-char user_password[50];
+pthread_t thread_id[JUMLAH_THREAD];
 
 typedef struct sockaddr_in SA_IN;
 typedef struct sockaddr SA;
 
 int setup_server(short, int);
 int accept_new_connection(int);
-void handle_connection(int);
+void* handle_connection(void* );
 
 int translate_request(const char* );
-void register_handler();
-void logout_handler();
-void login_handler();
-void add_handler();
-void download_handler();
-void delete_handler();
-void search_handler();
+void register_handler(int);
+void login_handler(int, bool*, char*, char*, int, int);
+void add_handler(int, bool, const char*, const char* );
+void download_handler(int, bool);
+void delete_handler(int, bool, const char*, const char* );
+void search_handler(int, bool);
 
 off_t fsize(const char * );
-void save_session(char*, char* );
-void clear_session();
-void record_log(int, const char* );
-void send_to_client(const void*, int);
-void read_from_client(void*, int, int);
+void record_log(int, const char*, const char*, const char* );
+void send_to_client(int, const void*, int);
+void read_from_client(int, void*, int, int);
 void split_string(char [][100], char [], const char []);
+void check_thread(int, const char* );
 void check(int, char* );
 
 int main(int argc, char const *argv[]) {
   int server_socket = setup_server(SERVER_PORT, BACKLOG);
+  int client_number = 0;
 
   mkdir("./FILES", 0777);
 
   while (true) {
-    printf("Waiting for connections...\n");
-    client_socket = accept_new_connection(server_socket);
-    printf("Connected!!\n\n");
+    printf("\nListening...\n");
+    int client_socket = accept_new_connection(server_socket);
+    printf("\nConnected!!\n");
 
-    // Do whatever we want
-    handle_connection(client_socket);
+    check_thread(
+      pthread_create(&thread_id[client_number++], NULL, handle_connection, &client_socket),
+      "Error creating thread!!"
+    );
   }
 
   close(server_socket);
@@ -127,37 +126,66 @@ int accept_new_connection(int server_socket) {
   return client_socket;
 }
 
-void handle_connection(int client_socket) {
-  char request[50];
+void* handle_connection(void* argument) {
+  int client_socket = (int) *((int* ) argument);
 
-  keep_handling = true;
-  logged_in = false;
+  char request[50];
+  char id[50];
+  char password[50];
+
+  bool logged_in = false;
+  bool keep_handling = true;
 
   while (keep_handling) {
-    printf("Waiting for request...\n");
-    read_from_client(request, sizeof(request), STRING);
-    printf("Recieved request: %s\n", request);
+    printf("Waiting request from %d...\n", client_socket);
+    read_from_client(client_socket, request, sizeof(request), STRING);
+    printf("Recieved request from %d: %s\n", client_socket, request);
 
-    switch (translate_request(request)) {
-      case REGISTER: register_handler(); break;
-      case LOGOUT: logout_handler(); break;
-      case LOGIN: login_handler(); break;
-      case ADD: add_handler(); break;
-      case DELETE: delete_handler(); break;
-      case DOWNLOAD: download_handler(); break;
+    int translated_request = translate_request(request);
+
+    switch (translated_request) {
+      case REGISTER: 
+        register_handler(client_socket); 
+        break;
+
+      case LOGIN: 
+        login_handler(
+          client_socket, &logged_in, id, password, 
+          sizeof(id), sizeof(password)
+        ); 
+        break;
+
+      case ADD: 
+        add_handler(client_socket, logged_in, id, password); 
+        break;
+
+      case DELETE: 
+        delete_handler(client_socket, logged_in, id, password); 
+        break;
+
+      case DOWNLOAD: 
+        download_handler(client_socket, logged_in); 
+        break;
 
       case SEE: 
       case FIND: 
-        search_handler();     
+        search_handler(client_socket, logged_in);
         break;
 
-      default: printf("Invalid request!\n"); break;
+      case LOGOUT:
+        keep_handling = false;
+        break;
+
+      default: 
+        printf("Invalid request!\n"); 
+        break;
     }
 
     printf("\n");
   }
 
   close(client_socket);
+  return NULL;
 }
 
 int translate_request(const char* request) {
@@ -173,12 +201,7 @@ int translate_request(const char* request) {
   return -1;
 }
 
-void logout_handler() {
-  keep_handling = false;
-  clear_session();
-}
-
-void register_handler() {
+void register_handler(int clien_socket) {
   char success_message[25] = "Account created";
   char id[50];
   char password[50];
@@ -186,8 +209,8 @@ void register_handler() {
 
   printf("Reading id & password...\n");
 
-  read_from_client(id, sizeof(id), STRING);
-  read_from_client(password, sizeof(password), STRING);
+  read_from_client(clien_socket, id, sizeof(id), STRING);
+  read_from_client(clien_socket, password, sizeof(password), STRING);
 
   strcpy(account_data, id);
   strcat(account_data, ":");
@@ -198,20 +221,21 @@ void register_handler() {
   fputs(account_data, fp);
   fclose(fp);
 
-  send_to_client(success_message, STRING);
+  send_to_client(clien_socket, success_message, STRING);
 }
 
-void login_handler() {
-  send_to_client(&logged_in, BOOLEAN);
-  if (logged_in) return;
+void login_handler(
+  int client_socket, bool* logged_in, char* id, char* password, 
+  int id_size, int password_size
+) {
+  send_to_client(client_socket, logged_in, BOOLEAN);
+  if (*logged_in) return;
 
   char success_message[50] = "Now you're logged in!";
   char failed_message[50] = "Incorrect id or password!";
-  char id[50];
-  char password[50];
 
-  read_from_client(id, sizeof(id), STRING);
-  read_from_client(password, sizeof(password), STRING);
+  read_from_client(client_socket, id, id_size, STRING);
+  read_from_client(client_socket, password, password_size, STRING);
 
   FILE* account_file = fopen("./akun.txt", "r");
   char data[256];
@@ -233,26 +257,25 @@ void login_handler() {
     const int PASS = 1;
 
     if (strcmp(id, account[ID]) == 0 && strcmp(password, account[PASS]) == 0) {
-      logged_in = true;
-      save_session(id, password);
+      *logged_in = true;
       break;
     }
   }
 
   fclose(account_file);
 
-  logged_in 
-    ? send_to_client(success_message, STRING)
-    : send_to_client(failed_message, STRING);
+  *logged_in
+    ? send_to_client(client_socket, success_message, STRING)
+    : send_to_client(client_socket, failed_message, STRING);
 }
 
-void add_handler() {
-  send_to_client(&logged_in, BOOLEAN);
+void add_handler(int client_socket, bool logged_in, const char* id, const char* password) {
+  send_to_client(client_socket ,&logged_in, BOOLEAN);
 
   if (!logged_in) return;
 
   int client_file_status;
-  read_from_client(&client_file_status, sizeof(client_file_status), INTEGER);
+  read_from_client(client_socket, &client_file_status, sizeof(client_file_status), INTEGER);
 
   if (client_file_status == NOT_FOUND) return;
 
@@ -268,9 +291,9 @@ void add_handler() {
   char file_name[50];
   char file_path[PATH_MAX];
 
-  read_from_client(publisher, sizeof(publisher), STRING);
-  read_from_client(tahun, sizeof(tahun), STRING);
-  read_from_client(file_name, sizeof(file_name), STRING);
+  read_from_client(client_socket, publisher, sizeof(publisher), STRING);
+  read_from_client(client_socket, tahun, sizeof(tahun), STRING);
+  read_from_client(client_socket, file_name, sizeof(file_name), STRING);
 
   sprintf(file_path, "./FILES/%s", file_name);
 
@@ -285,7 +308,7 @@ void add_handler() {
   sprintf(record_data, "%s\t%s\t%s\n", file_path, tahun, publisher);
   fputs(record_data, database_file);
 
-  read_from_client(&file_size, sizeof(file_size), INTEGER);
+  read_from_client(client_socket, &file_size, sizeof(file_size), INTEGER);
 
   double x;
   double y = (double) file_size;
@@ -309,11 +332,11 @@ void add_handler() {
   printf("downloaded: 100%%\n");
   printf("File (%.1lf MB) was recieved from client.\n", x / 1000000);
 
-  record_log(ADD, file_name);
+  record_log(ADD, file_name, id, password);
 }
 
-void download_handler() {
-  send_to_client(&logged_in, BOOLEAN);
+void download_handler(int client_socket, bool logged_in) {
+  send_to_client(client_socket, &logged_in, BOOLEAN);
 
   if (!logged_in) return;
 
@@ -324,7 +347,7 @@ void download_handler() {
   char requested_file[100];
   char records[3][100];
 
-  read_from_client(requested_file, sizeof(requested_file), STRING);
+  read_from_client(client_socket, requested_file, sizeof(requested_file), STRING);
   sprintf(file_path, "./FILES/%s", requested_file);
 
   /* Iterating files.tsv */
@@ -339,7 +362,7 @@ void download_handler() {
     }
   }
 
-  send_to_client(&file_available, BOOLEAN);
+  send_to_client(client_socket, &file_available, BOOLEAN);
   if (!file_available) return;
 
   FILE* source_file = fopen(file_path, "rb");
@@ -354,7 +377,7 @@ void download_handler() {
   unsigned char chunk[CHUNK_SIZE];
   int file_size = (int) fsize(file_path);
 
-  send_to_client(&file_size, INTEGER);
+  send_to_client(client_socket, &file_size, INTEGER);
 
   double x;
   double y = (double) file_size;
@@ -375,8 +398,8 @@ void download_handler() {
   printf("File (%d bytes) was successfully sent!\n", total_read_size);
 }
 
-void delete_handler() {
-  send_to_client(&logged_in, BOOLEAN);
+void delete_handler(int client_socket, bool logged_in, const char* id, const char* password) {
+  send_to_client(client_socket, &logged_in, BOOLEAN);
 
   if (!logged_in) return;
 
@@ -393,15 +416,11 @@ void delete_handler() {
   char filename[100];
   char records[3][100];
 
-  read_from_client(requested_file, sizeof(requested_file), STRING);
+  read_from_client(client_socket, requested_file, sizeof(requested_file), STRING);
   strcpy(filename, requested_file);
-
-  // printf("deleted filename: %s\n", filename);
 
   sprintf(file_path, "./FILES/%s", requested_file);
   sprintf(new_file_path, "./FILES/old-%s", requested_file);
-
-  // printf("deleted filename: %s\n", filename);
 
   /* Iterating files.tsv */
   while (fgets(information, 256, old_database_file) != NULL) {
@@ -421,9 +440,7 @@ void delete_handler() {
     fputs(copy_information, new_database_file);
   }
 
-  // printf("deleted filename: %s\n", filename);
-
-  send_to_client(&file_available, BOOLEAN);
+  send_to_client(client_socket, &file_available, BOOLEAN);
 
   fclose(old_database_file);
   fclose(new_database_file);
@@ -438,11 +455,11 @@ void delete_handler() {
   rename(file_path, new_file_path);
 
   strcpy(filename, basename(file_path));
-  record_log(DELETE, filename);
+  record_log(DELETE, filename, id, password);
 }
 
-void search_handler() {
-  send_to_client(&logged_in, BOOLEAN);
+void search_handler(int client_socket, bool logged_in) {
+  send_to_client(client_socket, &logged_in, BOOLEAN);
   
   if (!logged_in) return;
 
@@ -454,11 +471,11 @@ void search_handler() {
     keep_read = fgets(information, 256, database_file);
     information[strcspn(information, "\n")] = 0;
 
-    send_to_client(&keep_read, BOOLEAN);
+    send_to_client(client_socket, &keep_read, BOOLEAN);
     
     if (!keep_read) break;
     
-    send_to_client(information, STRING);
+    send_to_client(client_socket, information, STRING);
   } while (keep_read);
 
   fclose(database_file);
@@ -471,28 +488,18 @@ off_t fsize(const char *filename) {
   return -1; 
 }
 
-void save_session(char* id, char* password) {
-  strcpy(user_id, id);
-  strcpy(user_password, password);
-}
-
-void clear_session() {
-  bzero(user_id, 50);
-  bzero(user_password, 50);
-}
-
-void record_log(int mode, const char* filename) {
+void record_log(int mode, const char* filename, const char* id, const char* password) {
   FILE* log = fopen("./running.log", "a");
   char log_format[256];
   bzero(log_format, 256);
 
   switch (mode) {
     case ADD:
-      sprintf(log_format, "Tambah : %s (%s:%s)\n", filename, user_id, user_password);
+      sprintf(log_format, "Tambah : %s (%s:%s)\n", filename, id, password);
       break;
 
     case DELETE:
-      sprintf(log_format, "Hapus : %s (%s:%s)\n", filename, user_id, user_password);
+      sprintf(log_format, "Hapus : %s (%s:%s)\n", filename, id, password);
       break;
 
     default:
@@ -504,7 +511,7 @@ void record_log(int mode, const char* filename) {
   fclose(log);
 }
 
-void send_to_client(const void* data, int mode) {
+void send_to_client(int client_socket, const void* data, int mode) {
   int length = 0;
 
   switch (mode) {
@@ -527,7 +534,7 @@ void send_to_client(const void* data, int mode) {
   }
 }
 
-void read_from_client(void* data, int data_size, int mode) {
+void read_from_client(int client_socket, void* data, int data_size, int mode) {
   int length = 0;
 
   switch (mode) {
@@ -558,6 +565,14 @@ void split_string(char splitted[][100], char origin[], const char delimiter[]) {
     strcpy(splitted[i++], token);
     token = strtok(NULL, " ");
   }
+}
+
+void check_thread(int error, const char* error_message) {
+  const int NOT_OCCUR = 0;
+  if (error == NOT_OCCUR) return;
+
+  perror(error_message);
+  exit(EXIT_FAILURE);
 }
 
 void check(int result, char* error_message) {
