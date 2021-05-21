@@ -160,6 +160,7 @@ void handle_connection(int client_socket) {
   close(client_socket);
 }
 
+
 int translate_request(const char* request) {
   if (strcmp(request, "logout") == 0) return LOGOUT;
   if (strcmp(request, "register") == 0) return REGISTER;
