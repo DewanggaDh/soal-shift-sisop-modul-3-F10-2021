@@ -6,13 +6,9 @@
 
 Untuk menghandle berbagai request dari client, berikut adalah gambaran besar bagaimana server & client berkomunikasi:
 
-<br>
-
 ### **Inisialisasi koneksi antara server & client**
 
 ![Main](./img/soal1/Main.png)
-
-<br>
 
 ### **Handle request**
 
@@ -20,10 +16,13 @@ Untuk menghandle berbagai request dari client, berikut adalah gambaran besar bag
 
 - Disini client akan menginputkan request utamanya, lalu dikirim ke server dan dilakukan _handling request_ sesuai input requestnya.
 
-- Pada client, `extract_request()` dibutuhkan untuk request:
+- Pada client, [`extract_request()`](https://github.com/DewanggaDh/soal-shift-sisop-modul-3-F10-2021/blob/main/soal1/Client/client.c#L419) dibutuhkan untuk request:
+
   - DELETE
   - DOWNLOAD
   - FIND
+
+  Karena pada 3 request tersebut terdapat tambahan input yaitu nama file atay keyword. Pada dasarnya `extract_request()` hanya memecah string menjadi 2 dengan pemisah karakter spasi.
 
 <br>
 
@@ -74,7 +73,7 @@ Untuk menghandle berbagai request dari client, berikut adalah gambaran besar bag
 7. Server menerima potongan-potongan kecil data lalu menyimpannya kedalam folder **FILES**. Ini dilakukan hingga potongan-potongan tersebut selesai dikirim.
 8. Server mencatat **LOG** untuk **ADD FILES**. Proses selesai.
 
-| Lihat proses mencatat log pada **poin h**
+> Lihat proses mencatat log pada **poin h**
 
 <br>
 
@@ -117,7 +116,7 @@ Ide dari penghapusan baris pada database **files.tsv** adalah dengan membuat fil
 6. Hapus database lama
 7. Server mencatat **LOG** untuk **DELETE FILES**. Proses selesai.
 
-| Lihat proses mencatat log pada **poin h**
+> Lihat proses mencatat log pada **poin h**
 
 <br>
 
