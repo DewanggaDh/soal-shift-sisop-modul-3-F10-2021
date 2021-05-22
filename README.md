@@ -151,3 +151,231 @@ Request **SEE** dan **FIND** sebenarnya bekerja hampir sama. Bedanya request **F
 - Pada dasarnya yang dilakukan adalah mencatat informasi berdasarkan mode kedalam file bernama **running.log**
 
 <br><br>
+
+
+
+# **Nomor 2**
+
+a. Membuat program perkalian matrix (4x3 dengan 3x6) dan menampilkan hasilnya. Matriks nantinya akan berisi angka 1-20 (tidak perlu dibuat filter angka):
+  ### **declare dan scan matriks**
+      ```c++
+        int (* arrays3)[6];
+        int arrays1[4][3], arrays2[3][6];
+
+        key_t key = 911;
+        int shmid = shmget(key,sizeof(int[4][6]), IPC_CREAT | 0666); 
+        arrays3 =  shmat(shmid,NULL,0);  
+        int k=0, err;
+
+        printf("Matriks 1:\n");
+        for (int i=0; i<4; i++) {
+            for (int j=0; j<3 ;j++) {
+                scanf("%d", &arrays1[i][j]);
+            }
+        }
+        printf("\nMatriks2:\n");
+        for (int i=0; i<3; i++) {
+            for (int j=0; j<6 ;j++) {
+                scanf("%d", &arrays2[i][j]);
+            }
+        }
+        while(k<6) {
+            err = pthread_create(&(tid[k]), NULL, &multiplier, NULL); //pembuatan thread
+            if(err != 0) {
+                printf("Can't create thread : [%s]\n", strerror(err));
+            } else {
+                //printf("Crate thread success\n");
+            }
+            k++;
+        }
+
+        for (int i=0; i<6; i++) {
+            pthread_join(tid[i], NULL);
+        }
+      ```
+
+  ### **Fungsi perkalian 2 matriks**
+      ```c++
+        void *multiplier(void *arg) {
+            pthread_t id = pthread_self();
+
+            for(int x=0; x<6; x++){
+                if(pthread_equal(id,tid[x])){
+                    for (int i=0; i<4; i++) {
+                        arrHasil[i][x] = 0;
+                        for(int j=0; j<3; j++){
+                            arrHasil[i][x] += arrays1[i][j]*arrays2[j][x];
+                        }
+                    }
+                }
+            }
+        }
+      ```
+
+  ### **Print matriks dan kirim ke share memory untuk soal2b**
+      ```c++
+        for(int i=0; i<4; i++){
+            for(int k=0; k<6; k++)
+            {
+                arrays3[i][k] = arrHasil[i][k];
+                printf("%d ", arrays3[i][k]);
+            }
+            printf("\n");
+        }
+        shmdt(arrays3);
+      ```
+
+![soal2a](./img/soal2/soal2a.png)
+
+b. Membuat program dengan menggunakan matriks output dari program sebelumnya (program soal2a.c) (Catatan!: gunakan shared memory). Kemudian matriks tersebut akan dilakukan perhitungan dengan matrix baru (input user) sebagai berikut contoh perhitungan untuk matriks yang a	da. Perhitungannya adalah setiap cel yang berasal dari matriks A menjadi angka untuk faktorial, lalu cel dari matriks B menjadi batas maksimal faktorialnya matri(dari paling besar ke paling kecil) (Catatan!: gunakan thread untuk perhitungan di setiap cel). 
+Ketentuan
+- If a >= b  -> a!/(a-b)!
+- If b > a -> a!
+- If 0 -> 0
+
+  ### **declare variables & get shared memory dari 2a**
+  ```c++
+    int const rows=4, cols=6;
+
+    int (* arrays3)[6],size=1, size1=1, counter=0;
+    long long arrHasil[4][6];
+    long long new[4][6];
+    int k=0, err;
+    key_t key = 911;
+
+    int shmid = shmget(key,sizeof(int[rows][cols]), IPC_CREAT | 0666); 
+    arrays3 =  shmat(shmid,NULL,0);
+  ```
+  ### **input matriks baru lalu hitung**
+  ```c++
+    for (int row=0; row<rows; row++) {
+        for (int col=0; col<cols; col++) {
+            arrHasil[row][col] = arrays3[row][col];
+            scanf("%lld", &new[row][col]);
+        }
+    }
+
+    while (k<cols*rows) {
+        err = pthread_create(&(tid[k]), NULL, &multiplier, NULL);
+        if(err != 0){
+            printf("Can't create thread : [%s]\n", strerror(err));
+        }else{
+            //printf("Crate thread success\n");
+        }
+        k++;
+    }
+  ```
+
+  ### **fungsi penghitung faktorial**
+  ```c++
+    void *multiplier(void *arg)  {
+        pthread_t id = pthread_self();
+        for (int row=0; row<rows; row++) {
+            for (int col=0; col<cols; col++) {
+                if (pthread_equal(id, tid[row*cols+col])) {
+                    if ((long long)arrays3[row][col] >= new[row][col]) {
+                        long long batasAtas = arrays3[row][col], 
+                                  batasBawah = arrays3[row][col] - new[row][col];
+                        arrHasil[row][col] = batasAtas--;
+                        for (long long factorial = batasAtas; factorial>batasBawah; factorial--) {
+                            arrHasil[row][col] = arrHasil[row][col] * factorial;
+                        }
+                    } else if (arrays3[row][col] < new[row][col]) {
+                        arrHasil[row][col] = (long long)arrays3[row][col];
+                        for (long long factorial = (long long)arrays3[row][col]-1; factorial>0; factorial--) {
+                            arrHasil[row][col] = arrHasil[row][col] * factorial;
+                        }
+                    } 
+                    else if ((new[row][col]==0) || (arrays3[row][col]==0)) {
+                        arrHasil[row][col] = 0;
+                    }
+                }
+            }
+        }
+    }
+  ```
+
+  ### **print hasil**
+  ```c++
+    printf("\nMatriks factorial:\n");
+    for (int row=0; row<rows; row++) {
+        for (int col=0; col<cols; col++) {
+            printf("%5lld ", arrHasil[row][col]);
+        }
+        printf("\n");
+    }
+  ```
+
+![soal2b](./img/soal2/soal2b.png)
+
+c. Karena takut lag dalam pengerjaannya membantu Loba, Crypto juga membuat program (soal2c.c) untuk mengecek 5 proses teratas apa saja yang memakan resource komputernya dengan command “ps aux | sort -nrk 3,3 | head -5” (Catatan!: Harus menggunakan IPC Pipes)
+
+  ### **buat child beserta pipe**
+  ```c++
+    int p_1[2];
+    int p_2[2];
+    pid_t cpid1, cpid2, cpid3, status;
+    if(pipe(p_1) == -1) {
+        fprintf(stderr, "pipe failed");
+        return 1;
+    }
+    if(pipe(p_2) == -1) {
+        fprintf(stderr, "pipe failed");
+        return 1;
+    }
+
+    cpid1 = fork();
+    if (cpid1 < 0) fprintf(stderr, "fork failed");
+    if (cpid1 == 0) {
+        writePipe(p_1);
+
+        char *argv1[] = {"ps", "aux", NULL};
+        execv("/bin/ps", argv1);
+    } 
+
+    cpid2 = fork();
+    if (cpid2 < 0) fprintf(stderr, "fork failed");
+    if (cpid2 == 0) {
+        readPipe(p_1);
+        writePipe(p_2);
+
+        char *argv1[] = {"sort", "-nrk", "3,3", NULL};
+        execv("/bin/sort", argv1);
+    }
+
+     close(p_1[0]);
+     close(p_1[1]);
+
+    cpid3 = fork();
+    if (cpid3 < 0) fprintf(stderr, "fork failed");
+    if (cpid3 == 0) {
+        readPipe(p_2);
+
+        char *argv1[] = {"head", "-5", NULL};
+        execv("/bin/head", argv1);
+    }
+
+     close(p_2[0]);
+     close(p_2[1]);
+  ```
+
+  ### **fungsi read pipe dan write pipe**
+  ```c++
+    int writePipe (int *pipe) {
+        close(pipe[0]);
+        dup2(pipe[1], 1);
+        close(pipe[1]);
+        return 0;
+    }
+
+    int readPipe (int *pipe) {
+        close(pipe[1]);
+        dup2(pipe[0], 0);
+        close(pipe[0]);
+        return 0;
+    }
+  ```
+
+![soal2c](./img/soal2/soal2c.png)
+
+<br>

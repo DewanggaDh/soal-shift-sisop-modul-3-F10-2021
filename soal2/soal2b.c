@@ -12,16 +12,9 @@ pid_t child;
 int controller = 0;
 int const rows=4, cols=6;
 
-// int (* arrays3)[6],size=1, size1=1, counter=0;
-int arrays3[4][6] = {{13, 12, 16, 12, 8, 18}, 
-                     {8, 9, 10, 7, 6, 11},
-                     {12, 14, 20, 10, 4, 18},
-                     {7, 9, 7, 6, 8, 9}};
+int (* arrays3)[6],size=1, size1=1, counter=0;
 long long arrHasil[4][6];
-long long new[4][6] = {{14, 2, 3, 8, 8, 10},
-                       {7, 4, 8, 5, 14, 9},
-                       {9, 2, 13, 5, 11, 2},
-                       {8, 7, 10, 4, 10, 8}};
+long long new[4][6];
 
 void *multiplier(void *arg)  {
     pthread_t id = pthread_self();
@@ -53,8 +46,8 @@ void main () {
     int k=0, err;
     key_t key = 911;
 
-    // int shmid = shmget(key,sizeof(int[rows][cols]), IPC_CREAT | 0666); 
-    // arrays3 =  shmat(shmid,NULL,0);
+    int shmid = shmget(key,sizeof(int[rows][cols]), IPC_CREAT | 0666); 
+    arrays3 =  shmat(shmid,NULL,0);
     printf("2b. Matriks hasil:\n");
     for (int row=0; row<rows; row++) {
         for (int col=0; col<cols; col++) {
@@ -67,7 +60,7 @@ void main () {
     for (int row=0; row<rows; row++) {
         for (int col=0; col<cols; col++) {
             arrHasil[row][col] = arrays3[row][col];
-            // scanf("%lld", &new[row][col]);
+            scanf("%lld", &new[row][col]);
         }
     }
 
@@ -97,3 +90,16 @@ void main () {
     // shmctl(shmid,IPC_RMID,NULL); 
     exit(0);
 }
+
+
+// hasil perkalian 2a
+// 13 12 16 12  8 18
+//  8  9 10  7  6 11
+// 12 14 20 10  4 18
+//  7  9  7  6  8  9
+
+// new arr
+// 14  2  3  8  8 10
+//  7  4  8  5 14  9
+//  9  2 13  5 11  2
+//  8  7 10  4 10  8
