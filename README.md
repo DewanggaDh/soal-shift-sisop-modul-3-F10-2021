@@ -396,3 +396,4 @@ Kendala :
 - Bingung
 - Kalaupun lihat punya temen, tidak bisa diaplikasikan di kodingan
 - Kepalaku rasanya ingin meledak, sekarang berdenyut-denyut
+- Mau nyerah
