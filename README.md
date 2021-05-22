@@ -158,72 +158,72 @@ Request **SEE** dan **FIND** sebenarnya bekerja hampir sama. Bedanya request **F
 
 a. Membuat program perkalian matrix (4x3 dengan 3x6) dan menampilkan hasilnya. Matriks nantinya akan berisi angka 1-20 (tidak perlu dibuat filter angka):
   ### **declare dan scan matriks**
-      ```c++
-        int (* arrays3)[6];
-        int arrays1[4][3], arrays2[3][6];
+  ```c++
+    int (* arrays3)[6];
+    int arrays1[4][3], arrays2[3][6];
 
-        key_t key = 911;
-        int shmid = shmget(key,sizeof(int[4][6]), IPC_CREAT | 0666); 
-        arrays3 =  shmat(shmid,NULL,0);  
-        int k=0, err;
+    key_t key = 911;
+    int shmid = shmget(key,sizeof(int[4][6]), IPC_CREAT | 0666); 
+    arrays3 =  shmat(shmid,NULL,0);  
+    int k=0, err;
 
-        printf("Matriks 1:\n");
-        for (int i=0; i<4; i++) {
-            for (int j=0; j<3 ;j++) {
-                scanf("%d", &arrays1[i][j]);
-            }
+    printf("Matriks 1:\n");
+    for (int i=0; i<4; i++) {
+        for (int j=0; j<3 ;j++) {
+            scanf("%d", &arrays1[i][j]);
         }
-        printf("\nMatriks2:\n");
-        for (int i=0; i<3; i++) {
-            for (int j=0; j<6 ;j++) {
-                scanf("%d", &arrays2[i][j]);
-            }
+    }
+    printf("\nMatriks2:\n");
+    for (int i=0; i<3; i++) {
+        for (int j=0; j<6 ;j++) {
+            scanf("%d", &arrays2[i][j]);
         }
-        while(k<6) {
-            err = pthread_create(&(tid[k]), NULL, &multiplier, NULL); //pembuatan thread
-            if(err != 0) {
-                printf("Can't create thread : [%s]\n", strerror(err));
-            } else {
-                //printf("Crate thread success\n");
-            }
-            k++;
+    }
+    while(k<6) {
+        err = pthread_create(&(tid[k]), NULL, &multiplier, NULL); //pembuatan thread
+        if(err != 0) {
+            printf("Can't create thread : [%s]\n", strerror(err));
+        } else {
+            //printf("Crate thread success\n");
         }
+        k++;
+    }
 
-        for (int i=0; i<6; i++) {
-            pthread_join(tid[i], NULL);
-        }
-      ```
+    for (int i=0; i<6; i++) {
+        pthread_join(tid[i], NULL);
+    }
+  ```
 
   ### **Fungsi perkalian 2 matriks**
-      ```c++
-        void *multiplier(void *arg) {
-            pthread_t id = pthread_self();
+  ```c++
+    void *multiplier(void *arg) {
+        pthread_t id = pthread_self();
 
-            for(int x=0; x<6; x++){
-                if(pthread_equal(id,tid[x])){
-                    for (int i=0; i<4; i++) {
-                        arrHasil[i][x] = 0;
-                        for(int j=0; j<3; j++){
-                            arrHasil[i][x] += arrays1[i][j]*arrays2[j][x];
-                        }
+        for(int x=0; x<6; x++){
+            if(pthread_equal(id,tid[x])){
+                for (int i=0; i<4; i++) {
+                    arrHasil[i][x] = 0;
+                    for(int j=0; j<3; j++){
+                        arrHasil[i][x] += arrays1[i][j]*arrays2[j][x];
                     }
                 }
             }
         }
-      ```
+    }
+  ```
 
   ### **Print matriks dan kirim ke share memory untuk soal2b**
-      ```c++
-        for(int i=0; i<4; i++){
-            for(int k=0; k<6; k++)
-            {
-                arrays3[i][k] = arrHasil[i][k];
-                printf("%d ", arrays3[i][k]);
-            }
-            printf("\n");
+  ```c++
+    for(int i=0; i<4; i++){
+        for(int k=0; k<6; k++)
+        {
+            arrays3[i][k] = arrHasil[i][k];
+            printf("%d ", arrays3[i][k]);
         }
-        shmdt(arrays3);
-      ```
+        printf("\n");
+    }
+    shmdt(arrays3);
+  ```
 
 ![soal2a](./img/soal2/soal2a.png)
 
@@ -377,5 +377,16 @@ c. Karena takut lag dalam pengerjaannya membantu Loba, Crypto juga membuat progr
   ```
 
 ![soal2c](./img/soal2/soal2c.png)
+
+## **Kendala**
+  soal2a 
+  - key_t harus sama dengan no 2b agar shmget berjalan sesuai ekspektasi
+  soal2b
+  - fungsi faktorial sempat membuat bingung karena 3 kondisi yang harus dipenuhi
+  - overflow bila variable int32
+  soal2c
+  - read pipe dan write pipe sempat terbalik
+  - lebih mudah menggunakan 3 child daripada menggunakan parent
+
 
 <br>
