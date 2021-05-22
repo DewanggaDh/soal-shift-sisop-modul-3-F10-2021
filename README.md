@@ -379,12 +379,9 @@ c. Karena takut lag dalam pengerjaannya membantu Loba, Crypto juga membuat progr
 ![soal2c](./img/soal2/soal2c.png)
 
 ## **Kendala**
-  soal2a 
   - key_t harus sama dengan no 2b agar shmget berjalan sesuai ekspektasi
-  soal2b
   - fungsi faktorial sempat membuat bingung karena 3 kondisi yang harus dipenuhi
   - overflow bila variable int32
-  soal2c
   - read pipe dan write pipe sempat terbalik
   - lebih mudah menggunakan 3 child daripada menggunakan parent
 
