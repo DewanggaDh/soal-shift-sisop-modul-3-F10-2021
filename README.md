@@ -387,3 +387,9 @@ c. Karena takut lag dalam pengerjaannya membantu Loba, Crypto juga membuat progr
 
 
 <br>
+
+# Soal 3
+
+Kendala :
+- Segmentation fault, segmentation fault, segmentation fault
+- Kebingungan
