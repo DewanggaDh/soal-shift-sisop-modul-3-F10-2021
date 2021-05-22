@@ -397,3 +397,4 @@ Kendala :
 - Kalaupun lihat punya temen, tidak bisa diaplikasikan di kodingan
 - Kepalaku rasanya ingin meledak, sekarang berdenyut-denyut
 - Tidak bisa ditemukan solusi revisi
+- Aku nggak bisa menemukan caranya untuk membetulkannya
