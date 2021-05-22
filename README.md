@@ -393,3 +393,5 @@ c. Karena takut lag dalam pengerjaannya membantu Loba, Crypto juga membuat progr
 Kendala :
 - Segmentation fault, segmentation fault, segmentation fault
 - Kebingungan
+- Bingung
+- Kalaupun lihat punya temen, tidak bisa diaplikasikan di kodingan
