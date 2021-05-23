@@ -514,7 +514,7 @@ Setelah mengkategorikan folder tujuan, directory ditentukan berdasarkan sinyal. 
   ```
   
   ### **Menyusun daftar file-file dalam direktori**
-  ```
+  ```c++
   void listFilesRecursively(char *basePath)
 {
 	char path[256]={};
@@ -553,25 +553,23 @@ Opsi ini menerima input sebuah direktori, diakhiri dengan garis miring. File-fil
 ## c. Opsi \*
   ### **Membuat thread untuk command \* **
   ```c++
-    if (strcmp(argv[1],"-d") == 0) {
-        i = 0; sinyal = 2;
-	    int err;
-	    listFilesRecursively(argv[2]);
+    else if (strcmp(argv[1],"*") == 0) {
+        i = 0; sinyal = 3;
+	   int err;
+	    listFilesRecursively("/home/allam/Documents/GitHub/soal-shift-sisop-modul-3-F10-2021/soal3/");
 
 	    for (i=0; i<x; i++){
 		    err=pthread_create(&(thd[i]),NULL,&handler,(void *) tanda[i]);
-		    if(err!=0)
-		    {
-			    printf("Yah, gagal disimpan :(\n");
+		    
+            if(err!=0){
+			    return 0;
 		    }
 	    }
-	    
-        for (i=0; i<x; i++){
+
+	    for (i=0; i<x; i++){
 		    pthread_join(thd[i],NULL);
         }
-
-        printf("Direktori sukses disimpan!\n");
-    }
+    
   ```
 Opsi \* menerima input working direktori, yaitu direktori yang menjadi letak program yang menjalankan permasalahan ini, semisal di folder soal 3. Proses ini sama seperti dengan opsi -d, bedanya yang dikategorikan adalah file di dalam folder.
 
