@@ -390,6 +390,16 @@ c. Karena takut lag dalam pengerjaannya membantu Loba, Crypto juga membuat progr
 
 # Soal 3
 
+Permasalahan :
+Program dijalankan untuk mengategorikan file-file berdasarkan jenis ekstensinya dengan cara memindahkan file-file tersebut ke dalam directori bernama jenis ekstensinya dengan tiga pilihan
+a. Mengategorikan file-file tertentu dengan input path milik filenya
+b. Mengategorikan semua file di dalam satu directory
+c. Mengategorikan semua file di dalam working directory
+
+Semua directori ekstensi terletak di directory yang sama dengan file yang dijalankan.
+
+Jika file tidak memiliki ekstensi, maka filenya diletakan di direktori "Unknown". Jika file dalam mode hidden, maka filenya diletakan di direktori "Hidden".
+
 a. Program menerima opsi -f seperti contoh di atas, jadi pengguna bisa menambahkan argumen file yang bisa dikategorikan sebanyak yang diinginkan oleh pengguna.
   ### **buat thread untuk command -f**
   ```c++
@@ -522,6 +532,8 @@ c. Selain menerima opsi-opsi di atas, program ini menerima opsi *
   Setelah mengkategorikan folder tujuan, directory ditentukan berdasarkan sinyal. Pada variable sinyal, bila bernilai 1 maka directory tujuan ditentukan pada "/home/[usr]/modul3/". Bila sinyal bernilai 2 atau 3 maka directory tujuan akan diset dimana program C dijalankan.
 
 ![soal3c](./img/soal3/soal3c.png)
+
+
 
 ## **Kendala**
 - Segmentation Fault pada saat strcat
