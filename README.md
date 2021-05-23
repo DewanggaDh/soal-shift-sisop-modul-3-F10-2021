@@ -397,7 +397,7 @@ a. Program menerima opsi -f seperti contoh di atas, jadi pengguna bisa menambahk
         for(j = 2 ; j < argc ; j++ ){
             int err; sinyal = 1;
             printf("File %d : ", j-1);
-            err = pthread_create(&(thd[i]),NULL,&playandcount,argv[j]);
+            err = pthread_create(&(thd[i]),NULL,&handler,argv[j]);
             if (err != 0) {
                 printf("error pthread create\n");
                 // printf ("File %d : Sad,gagal :(\n", j-1);
@@ -418,7 +418,7 @@ b. Program juga dapat menerima opsi -d untuk melakukan pengkategorian pada suatu
 	    listFilesRecursively(argv[2]);
 
 	    for (i=0; i<x; i++){
-		    err=pthread_create(&(thd[i]),NULL,&playandcount,(void *) tanda[i]);
+		    err=pthread_create(&(thd[i]),NULL,&handler,(void *) tanda[i]);
 		    if(err!=0)
 		    {
 			    printf("Yah, gagal disimpan :(\n");
@@ -443,7 +443,7 @@ c. Selain menerima opsi-opsi di atas, program ini menerima opsi *
 	    listFilesRecursively(argv[2]);
 
 	    for (i=0; i<x; i++){
-		    err=pthread_create(&(thd[i]),NULL,&playandcount,(void *) tanda[i]);
+		    err=pthread_create(&(thd[i]),NULL,&handler,(void *) tanda[i]);
 		    if(err!=0)
 		    {
 			    printf("Yah, gagal disimpan :(\n");
@@ -522,3 +522,9 @@ c. Selain menerima opsi-opsi di atas, program ini menerima opsi *
   Setelah mengkategorikan folder tujuan, directory ditentukan berdasarkan sinyal. Pada variable sinyal, bila bernilai 1 maka directory tujuan ditentukan pada "/home/[usr]/modul3/". Bila sinyal bernilai 2 atau 3 maka directory tujuan akan diset dimana program C dijalankan.
 
 ![soal3c](./img/soal3/soal3c.png)
+
+## **Kendala**
+- Segmentation Fault pada saat strcat
+- Unhide file masih belum me-remove char pada awal nama tetapi diganti dengan "-"
+- Directory hasil yang berbeda membuat fungsi semakin kompleks
+- Pengerjaan terlalu berfokus pada pemrosesan string
