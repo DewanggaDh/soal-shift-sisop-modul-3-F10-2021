@@ -21,7 +21,7 @@ int x=0;
 char tanda[300][300]={};
 int sinyal=0;
 
-void* playandcount(void *arg)
+void* handler(void *arg)
 {
     
     char things[200];
@@ -120,7 +120,7 @@ int main(int argc, char *argv[]) {
         for(j = 2 ; j < argc ; j++ ){
             int err; sinyal = 1;
             printf("File %d : ", j-1);
-            err = pthread_create(&(thd[i]),NULL,&playandcount,argv[j]);
+            err = pthread_create(&(thd[i]),NULL,&handler,argv[j]);
             if (err != 0) {
                 printf("error pthread create\n");
                 // printf ("File %d : Sad,gagal :(\n", j-1);
@@ -134,11 +134,10 @@ int main(int argc, char *argv[]) {
 	    listFilesRecursively(argv[2]);
 
 	    for (i=0; i<x; i++){
-		    err=pthread_create(&(thd[i]),NULL,&playandcount,(void *) tanda[i]);
+		    err=pthread_create(&(thd[i]),NULL,&handler,(void *) tanda[i]);
 		    if(err!=0)
 		    {
 			    printf("Yah, gagal disimpan :(\n");
-			    return 0;;
 		    }
 	    }
 	    
@@ -156,7 +155,7 @@ int main(int argc, char *argv[]) {
 	    listFilesRecursively("/home/allam/Documents/GitHub/soal-shift-sisop-modul-3-F10-2021/soal3/");
 
 	    for (i=0; i<x; i++){
-		    err=pthread_create(&(thd[i]),NULL,&playandcount,(void *) tanda[i]);
+		    err=pthread_create(&(thd[i]),NULL,&handler,(void *) tanda[i]);
 		    
             if(err!=0){
 			    return 0;
@@ -170,3 +169,7 @@ int main(int argc, char *argv[]) {
     }
     return 0; 
 }
+
+//	./soal3 -f /home/allam/kategori1/caba.sh /home/allam/kategori1/iris.data /home/allam/kategori1/poto.png
+//	./soal3 -d /home/allam/kategori1/
+//	./soal3 \*

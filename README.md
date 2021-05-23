@@ -390,11 +390,133 @@ c. Karena takut lag dalam pengerjaannya membantu Loba, Crypto juga membuat progr
 
 # Soal 3
 
-Kendala :
-- Segmentation fault, segmentation fault, segmentation fault
-- Kebingungan
-- Bingung
-- Kalaupun lihat punya temen, tidak bisa diaplikasikan di kodingan
-- Kepalaku rasanya ingin meledak, sekarang berdenyut-denyut
-- Tidak bisa ditemukan solusi revisi
-- Aku nggak bisa menemukan caranya untuk membetulkannya
+a. Program menerima opsi -f seperti contoh di atas, jadi pengguna bisa menambahkan argumen file yang bisa dikategorikan sebanyak yang diinginkan oleh pengguna.
+  ### **buat thread untuk command -f**
+  ```c++
+    if (strcmp(argv[1],"-f") == 0) {
+        for(j = 2 ; j < argc ; j++ ){
+            int err; sinyal = 1;
+            printf("File %d : ", j-1);
+            err = pthread_create(&(thd[i]),NULL,&playandcount,argv[j]);
+            if (err != 0) {
+                printf("error pthread create\n");
+                // printf ("File %d : Sad,gagal :(\n", j-1);
+            } //else printf("File %d : Berhasil Dikategorikan\n",j-1);
+            
+            pthread_join(thd[i++],NULL);
+        }
+    }
+  ```
+![soal3a](./img/soal3/soal3a.png)
+
+b. Program juga dapat menerima opsi -d untuk melakukan pengkategorian pada suatu directory. Namun pada opsi -d ini, user hanya bisa memasukkan input 1 directory saja, tidak seperti file yang bebas menginput file sebanyak mungkin.
+  ### **buat thread untuk command -d**
+  ```c++
+    if (strcmp(argv[1],"-d") == 0) {
+        i = 0; sinyal = 2;
+	    int err;
+	    listFilesRecursively(argv[2]);
+
+	    for (i=0; i<x; i++){
+		    err=pthread_create(&(thd[i]),NULL,&playandcount,(void *) tanda[i]);
+		    if(err!=0)
+		    {
+			    printf("Yah, gagal disimpan :(\n");
+		    }
+	    }
+	    
+        for (i=0; i<x; i++){
+		    pthread_join(thd[i],NULL);
+        }
+
+        printf("Direktori sukses disimpan!\n");
+    }
+  ```
+![soal3b](./img/soal3/soal3b.png)
+
+c. Selain menerima opsi-opsi di atas, program ini menerima opsi *
+  ### **buat thread untuk command \* **
+  ```c++
+    if (strcmp(argv[1],"-d") == 0) {
+        i = 0; sinyal = 2;
+	    int err;
+	    listFilesRecursively(argv[2]);
+
+	    for (i=0; i<x; i++){
+		    err=pthread_create(&(thd[i]),NULL,&playandcount,(void *) tanda[i]);
+		    if(err!=0)
+		    {
+			    printf("Yah, gagal disimpan :(\n");
+		    }
+	    }
+	    
+        for (i=0; i<x; i++){
+		    pthread_join(thd[i],NULL);
+        }
+
+        printf("Direktori sukses disimpan!\n");
+    }
+  ```
+  ## **fungsi handler**
+  ```c++
+    void* handler(void *arg)
+    {
+        char things[200];
+        strcpy(things,arg);
+
+        unsigned long i=0;
+        pthread_t id=pthread_self();
+        int iter, index=0;
+        char *arr2[50];
+        char namaFile[200];
+        char argCopy[100];
+
+        //ngambil namafile beserta eksistensi
+        char *token1 = strtok(things, "/");
+        while (token1 != NULL) {
+                arr2[index++] = token1;
+                token1 = strtok(NULL, "/");
+        }
+        strcpy(namaFile,arr2[index-1]);
+
+        //cek filenya termasuk dalam folder apa
+        char *token = strchr(namaFile, '.');
+        if (token == NULL) {
+            strcat(argCopy, "Unknown");
+        }
+        else if (namaFile[0] == '.') {
+            strcat(argCopy, "Hidden");
+        }
+        else {
+            strcpy(argCopy, token+1);
+            for (int i = 0; argCopy[i]; i++) {
+                argCopy[i] = tolower(argCopy[i]);
+            }
+        }
+
+        char source[1000], target[1000], dirToBeCreate[120];
+        char *unhide, unhidden[200];
+        strcpy(source, arg);
+        if (sinyal == 1) {
+            sprintf(target, "/home/allam/modul3/%s/%s", argCopy, namaFile);
+            sprintf(dirToBeCreate, "/home/allam/modul3/%s/", argCopy);
+            mkdir(dirToBeCreate, 0750);   
+        } else if (sinyal == 2 || sinyal == 3) {
+            if (namaFile[0] == '.') {
+                namaFile[0] = '-';
+            }
+            sprintf(target, "%s/%s", argCopy, namaFile);
+            sprintf(dirToBeCreate, "%s/", argCopy);
+            mkdir(dirToBeCreate, 0750);
+        }
+
+        //pindah file
+        if (rename(source,target) == 0) {
+            printf("Berhasil Dikategorikan\n");
+        } else printf("Sad,gagal :(\n");
+
+        return NULL;
+    }
+  ```
+
+![soal3c](./img/soal3/soal3c.png)
