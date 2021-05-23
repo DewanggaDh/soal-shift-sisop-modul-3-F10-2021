@@ -518,5 +518,7 @@ c. Selain menerima opsi-opsi di atas, program ini menerima opsi *
         return NULL;
     }
   ```
+  program diatas untuk mengecek dan mengambil namaFile beserta eksistensi yang dimiliki file tersebut. Setelah itu namafile akan dicek melalui program dibawah ini, jika namafile tidak memiliki eksistensi maka termasuk kedalam folder Unknown. jika namafile pada awalannya memiliki "." pada awal namanya maka termasuk kedalam folder Hidden. namun jika tidak keduanya maka akan dicek termasuk ke folder mana. karena program tidak case sensitive maka karakter di konversi menjadi huruf kecil dengan command tolower.
+  Setelah mengkategorikan folder tujuan, directory ditentukan berdasarkan sinyal. Pada variable sinyal, bila bernilai 1 maka directory tujuan ditentukan pada "/home/[usr]/modul3/". Bila sinyal bernilai 2 atau 3 maka directory tujuan akan diset dimana program C dijalankan.
 
 ![soal3c](./img/soal3/soal3c.png)
