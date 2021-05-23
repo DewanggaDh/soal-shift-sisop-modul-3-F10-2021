@@ -1,164 +1,172 @@
 #include <stdio.h>
-#include <string.h>
-#include <pthread.h>
 #include <stdlib.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <syslog.h>
+#include <string.h>
 #include <unistd.h>
-#include <sys/types.h>
 #include <sys/wait.h>
-#include <limits.h>
-#include <sys/stat.h>
 #include <ctype.h>
+#include <unistd.h>
+#include <pthread.h>
+#include <dirent.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
-//pthread_t tid[2];
-//pid_t child;
 
-pthread_t tid[PATH_MAX];
+pthread_t thd[3]; //inisialisasi array untuk menampung thread dalam kasus ini ada 2 thread
+pid_t child;
+int length=5;
+int x=0;
+char tanda[300][300]={};
+int sinyal=0;
 
-/*
-void add_file(char filename[], char foldername[])
+void* playandcount(void *arg)
 {
-	int i = 0;
-	while(&filename[i] != NULL)
-	{
-		foldername[i] = filename[i];
-		i++;
-	}
-}*/
+    
+    char things[200];
+    strcpy(things,arg);
 
-void *iniinput(void* argv)
-{
-	char *jalan = (char*)argv, garing = '/';
-	char extension[PATH_MAX] = {},
-	filename1[PATH_MAX] = {}, filename2[PATH_MAX] = {},
-	destination[PATH_MAX] = {},
-	directory[PATH_MAX] = {},
-	*unknown = "Unknown",
-	*hidden = "Hidden",
-	*blank = "Blank";
-	printf("%s\n", jalan);
-	getcwd(directory, sizeof(directory));
-	strcpy(destination, directory);
-	strncat(destination, &garing, 1);
-	int i = 0, j;
-	while(jalan[i] != '\0' && jalan[i] != '.')
-	{
-		i++;
-	}
-	if(jalan[i - 1] == '/')
-	{
-		if(jalan[i] == '.')
-		{
-			strcat(destination, hidden);
-			printf("%s\n", destination);
-		}
-		else if(jalan[i] == '\0')
-		{
-			printf("Ini direktori\n");
-		}
-		
-	}
-	else if(jalan[i] == '\0')
-	{
-		strcat(destination, unknown);
-		printf("%s\n", destination);
-	}
-	else if(jalan[i] == '.')
-	{
-		if(jalan[i + 1] == '\0')
-		{
-			strcat(destination, blank);
-			printf("%s\n", destination);
-		}
-		else
-		{
-			i = i + 1;
-			while(jalan[i] != '\0')
-			{
-				strncat(extension, &jalan[i], 1);
-				i++;
-			}
-			strcat(destination, extension);
-			strncat(destination, &garing, 1);
-			strcat(filename1, strrchr(jalan, '/'));
-			//*filename1 = strrchr(jalan, '/');
-			j = 0;
-			while(filename1[j] != '\0' && filename1[j] != '.')
-			{
-				filename2[j] = filename1[j + 1];
-				j++;
-			}
-			filename2[j] = '\0';
-			strcat(destination, filename2);
-			printf("%s\n", destination);
-			printf("%s\n", extension);
-			printf("%s %s\n", filename1, filename2);
-		}
-	}
-	memset(destination, 0, sizeof(destination));
-	memset(extension, 0, sizeof(extension));
-	memset(filename1, 0, sizeof(filename1));
-	memset(filename2, 0, sizeof(filename2));
+	unsigned long i=0;
+	pthread_t id=pthread_self();
+	int iter, index=0;
+    char *arr2[50];
+    char namaFile[200];
+    char argCopy[100];
+
+    //ngambil namafile beserta eksistensi
+    char *token1 = strtok(things, "/");
+    while (token1 != NULL) {
+            arr2[index++] = token1;
+            token1 = strtok(NULL, "/");
+    }
+    strcpy(namaFile,arr2[index-1]);
+
+    //cek filenya termasuk dalam folder apa
+    char *token = strchr(namaFile, '.');
+    if (token == NULL) {
+        strcat(argCopy, "Unknown");
+    }
+    else if (namaFile[0] == '.') {
+        strcat(argCopy, "Hidden");
+    }
+    else {
+        strcpy(argCopy, token+1);
+        for (int i = 0; argCopy[i]; i++) {
+            argCopy[i] = tolower(argCopy[i]);
+        }
+    }
+
+    char source[1000], target[1000], dirToBeCreate[120];
+    char *unhide, unhidden[200];
+    strcpy(source, arg);
+    if (sinyal == 1) {
+        sprintf(target, "/home/allam/modul3/%s/%s", argCopy, namaFile);
+        sprintf(dirToBeCreate, "/home/allam/modul3/%s/", argCopy);
+        mkdir(dirToBeCreate, 0750);   
+    } else if (sinyal == 2 || sinyal == 3) {
+        if (namaFile[0] == '.') {
+            namaFile[0] = '-';
+        }
+        sprintf(target, "%s/%s", argCopy, namaFile);
+        sprintf(dirToBeCreate, "%s/", argCopy);
+        mkdir(dirToBeCreate, 0750);
+    }
+
+    //pindah file
+    if (rename(source,target) == 0) {
+        printf("Berhasil Dikategorikan\n");
+    } else printf("Sad,gagal :(\n");
+
+    return NULL;
 }
 
-int main(int argc, char **argv)
+void listFilesRecursively(char *basePath)
 {
-	//printf("%s\n", argv[argc]);
-	int files = argc - 2, flag, i = 0;
-	if(argv[1] == NULL)
+	char path[256]={};
+	struct dirent *dp;
+	DIR *dir = opendir(basePath);
+
+	if (!dir)
+	return;
+
+	while ((dp = readdir(dir)) != NULL)
 	{
-		printf("Tidak ada command\n");
-		return 0;
-	}
-	if(strcmp(argv[1], "-f") == 0)
-	{
-		if(files == 0)
-		printf("Input file kosong\n");
-		else
+		if (strcmp(dp->d_name, ".") != 0 && strcmp(dp->d_name, "..") != 0)
 		{
-			while(i < files)
+			if (dp->d_type == DT_REG)
 			{
-				printf("%s\n", argv[i + 2]);
-				flag = pthread_create(&(tid[i]), NULL, &iniinput, (void*)argv[i + 2]);
-				if(flag == 0)
-				printf("File %d : Berhasil Dikategorikan\n", i + 1);
-				else
-				printf("File %d : Sad, gagal :(\n", i + 1);
-				i++;
+				strcpy(tanda[x], basePath);
+				strcat(tanda[x], dp->d_name);
+				x++;
 			}
-			i = 0;
-			while(i < files)
+			else
 			{
-				pthread_join(tid[i], NULL);
-				i++;
+				strcpy(path, basePath);
+				strcat(path, dp->d_name);
+				strcat(path, "/");
+				listFilesRecursively(path);
 			}
 		}
 	}
-	
-	else if(strcmp(argv[1], "-d") == 0)
-	{
-		/*if(files == 0)
-		printf("Directory tidak ada\n");
-		else if(files == 1)
-		{
-			flag = pthread_create(&(tid[1]), NULL, iniinput, argv);
-			if(flag == 0)
-			printf("Direktori sukses disimpan!\n");
-			else
-			printf("Yah, gagal disimpan :(\n");
-			i++;
-		}*/
-	}
-	else if(strcmp(argv[1], "*") == 0)
-	{
-		/*flag = pthread_create(&(tid[2]), NULL, iniinput, argv);
-		if(flag == 0)
-		printf("Berhasil dikategorikan\n");
-		else
-		printf("Sad, gagal :(\n");*/
-	}
-	else
-	{
-		printf("Input salah\n");
-	}
-	return 0;
+	closedir(dir);
+}
+
+
+int main(int argc, char *argv[]) {
+    int i=0,j=0;
+
+    if (strcmp(argv[1],"-f") == 0) {
+        for(j = 2 ; j < argc ; j++ ){
+            int err; sinyal = 1;
+            printf("File %d : ", j-1);
+            err = pthread_create(&(thd[i]),NULL,&playandcount,argv[j]);
+            if (err != 0) {
+                printf("error pthread create\n");
+                // printf ("File %d : Sad,gagal :(\n", j-1);
+            } //else printf("File %d : Berhasil Dikategorikan\n",j-1);
+            
+            pthread_join(thd[i++],NULL);
+        }
+    } else if (strcmp(argv[1],"-d") == 0) {
+        i = 0; sinyal = 2;
+	    int err;
+	    listFilesRecursively(argv[2]);
+
+	    for (i=0; i<x; i++){
+		    err=pthread_create(&(thd[i]),NULL,&playandcount,(void *) tanda[i]);
+		    if(err!=0)
+		    {
+			    printf("Yah, gagal disimpan :(\n");
+			    return 0;;
+		    }
+	    }
+	    
+        for (i=0; i<x; i++){
+		    pthread_join(thd[i],NULL);
+        }
+
+        printf("Direktori sukses disimpan!\n");
+    }
+    
+    //mengkategorikan seluruh file yang ada di working directory
+    else if (strcmp(argv[1],"*") == 0) {
+        i = 0; sinyal = 3;
+	   int err;
+	    listFilesRecursively("/home/allam/Documents/GitHub/soal-shift-sisop-modul-3-F10-2021/soal3/");
+
+	    for (i=0; i<x; i++){
+		    err=pthread_create(&(thd[i]),NULL,&playandcount,(void *) tanda[i]);
+		    
+            if(err!=0){
+			    return 0;
+		    }
+	    }
+
+	    for (i=0; i<x; i++){
+		    pthread_join(thd[i],NULL);
+        }
+    
+    }
+    return 0; 
 }
