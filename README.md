@@ -513,7 +513,7 @@ b. Opsi -d
     }
   ```
   
-  ## **Menyusun daftar file-file dalam direktori
+  ## **Menyusun daftar file-file dalam direktori**
   ```
   void listFilesRecursively(char *basePath)
 {
