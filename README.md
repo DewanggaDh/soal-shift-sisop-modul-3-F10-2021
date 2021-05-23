@@ -404,7 +404,7 @@ Untuk memilih pilihan pengkategorian file, setelah file dieksekusi, dimasukkan k
 
 Pertama, program main menerima input yang berasal dari command line shell menggunakan argv dan argc di dalam argumen main. Lalu, dicari string kedua dari awal, argv[1], untuk mengecek opsinya. Masing-masing, setelah file dikategorikan, akan dibuatkan pthread_join untuk setiap file.
 
-a. Opsi -f
+## a. Opsi -f 
   ### **Membuat thread untuk command -f**
   ```c++
     if (strcmp(argv[1],"-f") == 0) {
@@ -489,7 +489,7 @@ Setelah mengkategorikan folder tujuan, directory ditentukan berdasarkan sinyal. 
 
 ![soal3a](./img/soal3/soal3a.png)
 
-b. Opsi -d
+## b. Opsi -d
   ### **Membuat thread untuk command -d**
   ```c++
     if (strcmp(argv[1],"-d") == 0) {
@@ -550,7 +550,7 @@ Opsi ini menerima input sebuah direktori, diakhiri dengan garis miring. File-fil
 
 ![soal3b](./img/soal3/soal3b.png)
 
-c. Opsi \*
+## c. Opsi \*
   ### **Membuat thread untuk command \* **
   ```c++
     if (strcmp(argv[1],"-d") == 0) {
