@@ -422,7 +422,7 @@ Pertama, program main menerima input yang berasal dari command line shell menggu
     }
   ```
   
-   ## **Fungsi handler**
+   ### **Fungsi handler**
   ```c++
     void* handler(void *arg)
     {
@@ -513,7 +513,7 @@ Setelah mengkategorikan folder tujuan, directory ditentukan berdasarkan sinyal. 
     }
   ```
   
-  ## **Menyusun daftar file-file dalam direktori**
+  ### **Menyusun daftar file-file dalam direktori**
   ```
   void listFilesRecursively(char *basePath)
 {
