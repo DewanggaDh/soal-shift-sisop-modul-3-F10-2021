@@ -391,17 +391,21 @@ c. Karena takut lag dalam pengerjaannya membantu Loba, Crypto juga membuat progr
 # Soal 3
 
 Permasalahan :
-Program dijalankan untuk mengategorikan file-file berdasarkan jenis ekstensinya dengan cara memindahkan file-file tersebut ke dalam directori bernama jenis ekstensinya dengan tiga pilihan
+Program dijalankan untuk mengategorikan file-file berdasarkan jenis ekstensinya dengan cara memindahkan file-file tersebut ke dalam directori bernama jenis ekstensinya dengan tiga pilihan. Perlu diketahui bahwa nama direktori ekstensinya semuanya lowercase, agar dapat mengakomodasi ekstensi yang tidak case sensitive
 a. Mengategorikan file-file tertentu dengan input path milik filenya
 b. Mengategorikan semua file di dalam satu directory
 c. Mengategorikan semua file di dalam working directory
 
 Semua directori ekstensi terletak di directory yang sama dengan file yang dijalankan.
 
-Jika file tidak memiliki ekstensi, maka filenya diletakan di direktori "Unknown". Jika file dalam mode hidden, maka filenya diletakan di direktori "Hidden".
+Jika file tidak memiliki ekstensi, maka filenya diletakan di direktori "Unknown". Jika file dalam mode hidden, maka filenya diletakan di direktori "Hidden". Setiap file yang dipindahkan memiliki satu thread agar prosesnya bisa berjalan secara bersamaan.
 
-a. Program menerima opsi -f seperti contoh di atas, jadi pengguna bisa menambahkan argumen file yang bisa dikategorikan sebanyak yang diinginkan oleh pengguna.
-  ### **buat thread untuk command -f**
+Untuk memilih pilihan pengkategorian file, setelah file dieksekusi, dimasukkan ke dalam command line shell perintah -f, -d, atau \*. -f akan mengategorikan path file-file tertentu, -d akan mengategorikan file-file di dalam satu directory, dan \* akan mengategorikan semua file di dalam working directory
+
+Pertama, program main menerima input yang berasal dari command line shell menggunakan argv dan argc di dalam argumen main. Lalu, dicari string kedua dari awal, argv[1], untuk mengecek opsinya. Masing-masing, setelah file dikategorikan, akan dibuatkan pthread_join untuk setiap file.
+
+a. Opsi -f
+  ### **Membuat thread untuk command -f**
   ```c++
     if (strcmp(argv[1],"-f") == 0) {
         for(j = 2 ; j < argc ; j++ ){
@@ -417,57 +421,8 @@ a. Program menerima opsi -f seperti contoh di atas, jadi pengguna bisa menambahk
         }
     }
   ```
-![soal3a](./img/soal3/soal3a.png)
-
-b. Program juga dapat menerima opsi -d untuk melakukan pengkategorian pada suatu directory. Namun pada opsi -d ini, user hanya bisa memasukkan input 1 directory saja, tidak seperti file yang bebas menginput file sebanyak mungkin.
-  ### **buat thread untuk command -d**
-  ```c++
-    if (strcmp(argv[1],"-d") == 0) {
-        i = 0; sinyal = 2;
-	    int err;
-	    listFilesRecursively(argv[2]);
-
-	    for (i=0; i<x; i++){
-		    err=pthread_create(&(thd[i]),NULL,&handler,(void *) tanda[i]);
-		    if(err!=0)
-		    {
-			    printf("Yah, gagal disimpan :(\n");
-		    }
-	    }
-	    
-        for (i=0; i<x; i++){
-		    pthread_join(thd[i],NULL);
-        }
-
-        printf("Direktori sukses disimpan!\n");
-    }
-  ```
-![soal3b](./img/soal3/soal3b.png)
-
-c. Selain menerima opsi-opsi di atas, program ini menerima opsi *
-  ### **buat thread untuk command \* **
-  ```c++
-    if (strcmp(argv[1],"-d") == 0) {
-        i = 0; sinyal = 2;
-	    int err;
-	    listFilesRecursively(argv[2]);
-
-	    for (i=0; i<x; i++){
-		    err=pthread_create(&(thd[i]),NULL,&handler,(void *) tanda[i]);
-		    if(err!=0)
-		    {
-			    printf("Yah, gagal disimpan :(\n");
-		    }
-	    }
-	    
-        for (i=0; i<x; i++){
-		    pthread_join(thd[i],NULL);
-        }
-
-        printf("Direktori sukses disimpan!\n");
-    }
-  ```
-  ## **fungsi handler**
+  
+   ## **Fungsi handler**
   ```c++
     void* handler(void *arg)
     {
@@ -528,11 +483,99 @@ c. Selain menerima opsi-opsi di atas, program ini menerima opsi *
         return NULL;
     }
   ```
-  program diatas untuk mengecek dan mengambil namaFile beserta eksistensi yang dimiliki file tersebut. Setelah itu namafile akan dicek melalui program dibawah ini, jika namafile tidak memiliki eksistensi maka termasuk kedalam folder Unknown. jika namafile pada awalannya memiliki "." pada awal namanya maka termasuk kedalam folder Hidden. namun jika tidak keduanya maka akan dicek termasuk ke folder mana. karena program tidak case sensitive maka karakter di konversi menjadi huruf kecil dengan command tolower.
-  Setelah mengkategorikan folder tujuan, directory ditentukan berdasarkan sinyal. Pada variable sinyal, bila bernilai 1 maka directory tujuan ditentukan pada "/home/[usr]/modul3/". Bila sinyal bernilai 2 atau 3 maka directory tujuan akan diset dimana program C dijalankan.
+Untuk masing-masing file yang diinputkan mulai dari string kedua, argv[2], akan dipanggil fungsi untuk memindahkan file tersebut. Fungsi tersebut akan mengecek apakah file tersebut memiliki ekstensi, tidak memiliki ekstensi, atau hidden (Yang berawalan titik). Lalu file tersebut dipindahkan ke folder yang sesuai dengan ekstensinya.
+
+Setelah mengkategorikan folder tujuan, directory ditentukan berdasarkan sinyal. Pada variable sinyal, bila bernilai 1 maka directory tujuan ditentukan pada "/home/[usr]/modul3/". Bila sinyal bernilai 2 atau 3 maka directory tujuan akan diset dimana program C dijalankan.
+
+![soal3a](./img/soal3/soal3a.png)
+
+b. Opsi -d
+  ### **Membuat thread untuk command -d**
+  ```c++
+    if (strcmp(argv[1],"-d") == 0) {
+        i = 0; sinyal = 2;
+	    int err;
+	    listFilesRecursively(argv[2]);
+
+	    for (i=0; i<x; i++){
+		    err=pthread_create(&(thd[i]),NULL,&handler,(void *) tanda[i]);
+		    if(err!=0)
+		    {
+			    printf("Yah, gagal disimpan :(\n");
+		    }
+	    }
+	    
+        for (i=0; i<x; i++){
+		    pthread_join(thd[i],NULL);
+        }
+
+        printf("Direktori sukses disimpan!\n");
+    }
+  ```
+  
+  ## **Menyusun daftar file-file dalam direktori
+  ```
+  void listFilesRecursively(char *basePath)
+{
+	char path[256]={};
+	struct dirent *dp;
+	DIR *dir = opendir(basePath);
+
+	if (!dir)
+	return;
+
+	while ((dp = readdir(dir)) != NULL)
+	{
+		if (strcmp(dp->d_name, ".") != 0 && strcmp(dp->d_name, "..") != 0)
+		{
+			if (dp->d_type == DT_REG)
+			{
+				strcpy(tanda[x], basePath);
+				strcat(tanda[x], dp->d_name);
+				x++;
+			}
+			else
+			{
+				strcpy(path, basePath);
+				strcat(path, dp->d_name);
+				strcat(path, "/");
+				listFilesRecursively(path);
+			}
+		}
+	}
+	closedir(dir);
+}
+  ```
+Opsi ini menerima input sebuah direktori, diakhiri dengan garis miring. File-file di dalam direktori dan juga file-file di dalam subdirektori, semuanya disusun dalam sekumpulan array string yang dapat dikategorikan dengan fungsi persoalan pertama tadi. Untuk mengkategorikan file-file di dalam subdirektori, digunakan rekursi fungsi untuk menata daftar file di dalam direktori tersebut.
+
+![soal3b](./img/soal3/soal3b.png)
+
+c. Opsi \*
+  ### **Membuat thread untuk command \* **
+  ```c++
+    if (strcmp(argv[1],"-d") == 0) {
+        i = 0; sinyal = 2;
+	    int err;
+	    listFilesRecursively(argv[2]);
+
+	    for (i=0; i<x; i++){
+		    err=pthread_create(&(thd[i]),NULL,&handler,(void *) tanda[i]);
+		    if(err!=0)
+		    {
+			    printf("Yah, gagal disimpan :(\n");
+		    }
+	    }
+	    
+        for (i=0; i<x; i++){
+		    pthread_join(thd[i],NULL);
+        }
+
+        printf("Direktori sukses disimpan!\n");
+    }
+  ```
+Opsi \* menerima input working direktori, yaitu direktori yang menjadi letak program yang menjalankan permasalahan ini, semisal di folder soal 3. Proses ini sama seperti dengan opsi -d, bedanya yang dikategorikan adalah file di dalam folder.
 
 ![soal3c](./img/soal3/soal3c.png)
-
 
 
 ## **Kendala**
