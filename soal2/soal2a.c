@@ -8,9 +8,9 @@
 #include <sys/ipc.h> 
 #include <sys/shm.h> 
 
+int size=1, size1=1;
 pthread_t tid[6]; //inisisasi banyaknya thread (dalam kasus ini 6 thread)
 int arrays1[4][3], arrays2[3][6];
-int size=1, size1=1;
 int arrHasil[4][6];
 int (* arrays3)[6];
 
@@ -27,7 +27,6 @@ void *multiplier(void *arg) {
             }
         }
     }
-
 }
 
 void main()
@@ -42,23 +41,15 @@ void main()
     {
         for(int j=0; j<3 ;j++)
         {
-            // arrays1[i][j] = size;
-            // printf("%3d ", arrays1[i][j]);
-            // size++;
             scanf("%d", &arrays1[i][j]);
         }
-        printf("\n");
     }
     printf("\nMatriks2:\n");
     for(int i=0; i<3; i++)
     {
         for(int j=0; j<6 ;j++){
-            // arrays2[i][j] = size1;
-            // printf("%3d ", arrays2[i][j]);
-            // size1++;
             scanf("%d", &arrays2[i][j]);
         }
-        printf("\n");
     }
     printf("\n");
 
@@ -77,7 +68,7 @@ void main()
         pthread_join(tid[i], NULL);
     }
     
-    printf("Matriks hasil:\n");
+    printf("2a. Matriks hasil:\n");
     for(int i=0; i<4; i++){
         for(int k=0; k<6; k++)
         {
@@ -90,3 +81,14 @@ void main()
     // shmctl(shmid, IPC_RMID, NULL);
     exit(0);
 }
+
+// a
+// 4 1 4
+// 2 1 3
+// 4 2 2
+// 1 1 4
+
+// b
+// 2 1 3 2 0 3
+// 1 4 4 0 0 2
+// 1 1 0 1 2 1

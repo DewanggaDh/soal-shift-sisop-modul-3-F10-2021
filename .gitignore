@@ -90,3 +90,6 @@ Temporary Items
 soal1/*
 !soal1/Client/client.c
 !soal1/Client/server.c
+
+soal3/*
+!soal3/soal3.c

@@ -101,8 +101,7 @@ void handle_connection(int client_socket) {
     scanf("%[^\n]%*c", request);
 
     extract_request(request, main_request, option);
-    // send_main_request(main_request);
-    send_to_server(request, STRING);
+    send_to_server(main_request, STRING);
     printf("Request was sent to server!\n");
 
     switch (translate_request(request)) {

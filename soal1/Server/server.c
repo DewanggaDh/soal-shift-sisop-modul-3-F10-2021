@@ -188,6 +188,7 @@ void* handle_connection(void* argument) {
   return NULL;
 }
 
+
 int translate_request(const char* request) {
   if (strcmp(request, "logout") == 0) return LOGOUT;
   if (strcmp(request, "register") == 0) return REGISTER;
